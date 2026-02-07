@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<head>
+    <script type="text/javascript" src="control.js" defer></script>
+    <script type="text/javascript" src="canvas.js" defer></script>
+    <script type="text/javascript" src="transmission.js" defer></script>
+    <script type="text/javascript" src="style_enhance.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+    <button id="export-button">Export</button>
+
+    <div id="operation-space">
+        <div id="drawing-canvas-container">
+            <canvas width="10px" height="10px" id="drawing-canvas"></canvas>
+        </div>
+        <div id="tool-bar">
+            <div id="color-picker-container">
+                <label for="color-picker" class="tool-button" id="color-button"><i class="material-icons">color_lens</i></label>
+                <input type="color" id="color-picker" value="#ff0000">
+            </div> 
+            <div class="tool-button" id="pencil-button"><i class="material-icons">edit</i></div>
+            <div class="tool-button" id="brush-button"><i class="material-icons">brush</i></div>
+            <div class="tool-button" id="fill-button"><i class="material-icons">format_color_fill</i></div>
+            <div class="tool-button" id="line-button"><i class="material-icons">show_chart</i></div>
+            <div class="tool-button" id="circle-button"><i class="material-icons">radio_button_unchecked</i></div>
+        </div>
+        <div id="undo-bar">
+            <div class="tool-button" id="undo-button"><i class="material-icons">undo</i></div>
+            <div class="tool-button" id="redo-button"><i class="material-icons">redo</i></div>
+            <div class="tool-button" id="eraser-button"><i class="material-icons">backspace</i></div> 
+            <div class="tool-button" id="reset-button"><i class="material-icons">delete</i></div>
+        </div>
+    </div>
+
+    <div id="frame-list-container">
+        <div id="frame-list">
+            <div id="add-frame"><i class="material-icons">add</i></div>
+            <div id="import-frame"><i class="material-icons">download</i></div>
+        </div>
+        <div id="gradient-left"></div>
+        <div id="gradient-right"></div>
+    </div>
+
+    <div class ="control-buttons">
+        <button id="previous-button"><i class="material-icons">skip_previous</i></button>
+        <button id="play-button"><i class="material-icons">play_arrow</i></button>
+        <button id="next-button"><i class="material-icons">skip_next</i></button>
+    </div>
+
+    <div id="context-menu">
+        <div class="item">Duration</div>
+        <div class="item">Crossfade</div>
+        <div class="item" id="menu-duplicate">Duplicate</div>
+        <div class="item" id="menu-delete">Delete</div>
+    </div>
+
+</body>
