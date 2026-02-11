@@ -65,7 +65,7 @@ selectTool(pencil_tool);
 
 // add frame
 
-add_button.addEventListener("click", () => {
+add_button.addEventListener("pointerup", () => {
   add_frame();
   setCurrFrame(frame_amount - 1);
   focusPreview();
@@ -78,7 +78,7 @@ function add_frame() {
   new_canvas.id = "preview_" + frame_amount;
   new_canvas.className = "preview-canvas";
   new_canvas.draggable = true;
-  new_canvas.addEventListener("click", () => {
+  new_canvas.addEventListener("pointerup", () => {
     setCurrFrame(new_canvas.id.split("_")[1]);
   });
   addContextMenu(new_canvas);
@@ -94,7 +94,7 @@ function add_frame() {
 
 // play / pause
 
-play_button.addEventListener("click", () => {
+play_button.addEventListener("pointerup", () => {
   triggerPlayPause();
 });
 
@@ -117,7 +117,7 @@ function triggerPlayPause() {
 
 // skip buttons
 
-next_button.addEventListener("click", () => {
+next_button.addEventListener("pointerup", () => {
   skipFrame(1);
 });
 
@@ -127,7 +127,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-previous_button.addEventListener("click", () => {
+previous_button.addEventListener("pointerup", () => {
   skipFrame(-1);
 });
 
@@ -226,7 +226,7 @@ function updatePickerFront() {
 // tool selection
 
 tools.forEach((tool) => {
-  tool.addEventListener("click", () => {
+  tool.addEventListener("pointerup", () => {
     if (curr_tool !== tool) {
       selectTool(tool);
     }
@@ -239,7 +239,7 @@ function selectTool(tool) {
   curr_tool = tool;
 }
 
-eraser_tool.addEventListener("click", () => {
+eraser_tool.addEventListener("pointerup", () => {
   is_erasing = !is_erasing;
   if (is_erasing) {
     eraser_tool.classList.add("selected-tool");
@@ -268,7 +268,7 @@ function addContextMenu(item) {
         let width = window.innerWidth;
         let height = window.innerHeight;
 
-        //If user clicks/touches near right corner
+        //If user pointerups/touches near right corner
         if (width - mouseX <= 200) {
           contextMenu.style.left = width - menuWidth + "px";
           contextMenu.style.top = mouseY + "px";
@@ -299,12 +299,12 @@ function addContextMenu(item) {
   });
 }
 
-delete_menu_item.addEventListener("click", () => {
+delete_menu_item.addEventListener("pointerup", () => {
   deleteFrame(selected_frame);
   contextMenu.style.visibility = "hidden";
 });
 
-duplicate_menu_item.addEventListener("click", () => {
+duplicate_menu_item.addEventListener("pointerup", () => {
   duplicateFrame(selected_frame);
   contextMenu.style.visibility = "hidden";
 });
@@ -351,7 +351,7 @@ document.addEventListener("touchend", function (e) {
 });
 
 //click outside the menu to close it (for click devices)
-document.addEventListener("click", function (e) {
+document.addEventListener("pointerup", function (e) {
   if (!contextMenu.contains(e.target)) {
     contextMenu.style.visibility = "hidden";
   }
