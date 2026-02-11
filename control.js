@@ -1,9 +1,11 @@
 let curr_frame = -1;
 let curr_color = "#ff0000";
-let frame_amount = 0;
 let playing = false;
 
 const drawing_canvas = document.getElementById("drawing-canvas");
+const frame_list = document.getElementById("frames");
+const preview_template = document.getElementById("preview-template");
+const contextMenu = document.getElementById("context-menu");
 
 const play_button = document.getElementById("play-button");
 const next_button = document.getElementById("next-button");
@@ -33,15 +35,10 @@ const tools = [pencil_tool, brush_tool, fill_tool, line_tool, circle_tool];
 let curr_tool = pencil_tool;
 
 let selected_frame = -1;
-let events = ["contextmenu", "touchstart"];
 const delete_menu_item = document.getElementById("menu-delete");
 const duplicate_menu_item = document.getElementById("menu-duplicate");
 
 let dragged;
-
-function getCurrPreview() {
-  return document.getElementById("preview_" + curr_frame);
-}
 
 /*window.onbeforeunload = function(){
     return "Did you save your stuff?";
@@ -67,29 +64,54 @@ selectTool(pencil_tool);
 
 add_button.addEventListener("pointerup", () => {
   add_frame();
-  setCurrFrame(frame_amount - 1);
+  setCurrFrame(getFrameCount() - 1);
   focusPreview();
 });
 
 function add_frame() {
-  let new_canvas = document.createElement("canvas");
-  new_canvas.width = 10;
-  new_canvas.height = 10;
-  new_canvas.id = "preview_" + frame_amount;
-  new_canvas.className = "preview-canvas";
-  new_canvas.draggable = true;
-  new_canvas.addEventListener("pointerup", () => {
-    setCurrFrame(new_canvas.id.split("_")[1]);
+  let new_preview = preview_template.content.firstElementChild.cloneNode(true);
+  new_preview.draggable = true;
+
+  new_preview.addEventListener("pointerup", () => {
+    setCurrFrame(getFrameID(new_preview));
   });
-  addContextMenu(new_canvas);
-  addDragAndDrop(new_canvas);
 
-  let frame_list = document.getElementById("frame-list");
-  frame_list.insertBefore(new_canvas, add_button);
+  new_preview
+    .getElementsByClassName("settings_icon")[0]
+    .addEventListener("pointerup", (e) => {
+      showContextMenu(new_preview);
+    });
 
-  frame_amount += 1;
+  addDragAndDrop(new_preview);
 
-  return new_canvas;
+  frame_list.appendChild(new_preview);
+
+  return new_preview;
+}
+
+frame_list.addEventListener("wheel", function (e) {
+  e.preventDefault();
+  frame_list.scrollLeft += e.deltaY;
+});
+
+function getFrameID(frame) {
+  return Array.from(frame_list.children).indexOf(frame);
+}
+
+function getPreviewAt(frame_index) {
+  return frame_list.children[frame_index];
+}
+
+function getCurrPreview() {
+  return getPreviewAt(curr_frame);
+}
+
+function getCurrCanvas() {
+  return getCurrPreview().getElementsByClassName("preview-canvas")[0];
+}
+
+function getFrameCount() {
+  return frame_list.children.length;
 }
 
 // play / pause
@@ -140,9 +162,9 @@ document.addEventListener("keydown", (event) => {
 function skipFrame(direction) {
   let next_frame;
   if (direction > 0) {
-    next_frame = (curr_frame + direction) % frame_amount;
+    next_frame = (curr_frame + direction) % getFrameCount();
   } else if (direction < 0) {
-    next_frame = (curr_frame + direction + frame_amount) % frame_amount;
+    next_frame = (curr_frame + direction + getFrameCount()) % getFrameCount();
   }
   setCurrFrame(next_frame);
   focusPreview();
@@ -152,7 +174,7 @@ function skipFrame(direction) {
 
 function playAnimation() {
   if (!playing) return;
-  let next_frame = (curr_frame + 1) % frame_amount;
+  let next_frame = (curr_frame + 1) % getFrameCount();
   setCurrFrame(next_frame);
   focusPreview();
   setTimeout(playAnimation, 100);
@@ -160,31 +182,19 @@ function playAnimation() {
 
 function setCurrFrame(frame_index) {
   if (curr_frame === frame_index) return;
-  if (frame_index < 0 || frame_index >= frame_amount) return;
+  if (frame_index < 0 || frame_index >= getFrameCount()) return;
+
   if (curr_frame >= 0) {
-    let former_canvas = getCurrPreview();
-    former_canvas.style.borderWidth = "0px";
-    former_canvas.style.padding = "7px";
-    former_canvas.style.backgroundClip = "padding-box";
+    let former_preview = getCurrPreview();
+    former_preview.classList.remove("selected-preview");
   }
 
   curr_frame = frame_index;
+  let new_preview = getCurrPreview(); 
+  new_preview.classList.add("selected-preview");
 
-  let source_canvas = getCurrPreview();
-
-  source_canvas.style.borderWidth = "3px";
-  source_canvas.style.padding = "4px";
-  source_canvas.style.backgroundClip = "content-box";
-
-  let drawing_context = drawing_canvas.getContext("2d");
-  drawing_context.clearRect(0, 0, drawing_canvas.width, drawing_canvas.height);
-  drawing_context.drawImage(
-    source_canvas,
-    0,
-    0,
-    drawing_canvas.width,
-    drawing_canvas.height
-  );
+  // TODO: "source_canvas is undefined"
+  transferToPreview(getCurrCanvas());
 }
 
 function focusPreview() {
@@ -198,8 +208,7 @@ function focusPreview() {
 
 // preview update
 
-function transferToPreview() {
-  let source_canvas = getCurrPreview();
+function transferToPreview(source_canvas) {
   let source_context = source_canvas.getContext("2d");
   source_context.clearRect(0, 0, source_canvas.width, source_canvas.height);
   source_context.drawImage(
@@ -207,7 +216,7 @@ function transferToPreview() {
     0,
     0,
     source_canvas.width,
-    source_canvas.height
+    source_canvas.height,
   );
 }
 
@@ -250,53 +259,40 @@ eraser_tool.addEventListener("pointerup", () => {
 
 // context menu for frames
 
-var timeout;
-var lastTap = 0;
-let contextMenu = document.getElementById("context-menu");
-
 // TODO: change menu style etc.
-function addContextMenu(item) {
-  events.forEach((eventType) => {
-    item.addEventListener(
-      eventType,
-      (e) => {
-        e.preventDefault();
-        let mouseX = e.clientX || e.touches[0].clientX;
-        let mouseY = e.clientY || e.touches[0].clientY;
-        let menuHeight = contextMenu.getBoundingClientRect().height;
-        let menuWidth = contextMenu.getBoundingClientRect().width;
-        let width = window.innerWidth;
-        let height = window.innerHeight;
+function showContextMenu(item) {
+  let mouseX = e.clientX || e.touches[0].clientX;
+  let mouseY = e.clientY || e.touches[0].clientY;
+  let menuHeight = contextMenu.getBoundingClientRect().height;
+  let menuWidth = contextMenu.getBoundingClientRect().width;
+  let width = window.innerWidth;
+  let height = window.innerHeight;
 
-        //If user pointerups/touches near right corner
-        if (width - mouseX <= 200) {
-          contextMenu.style.left = width - menuWidth + "px";
-          contextMenu.style.top = mouseY + "px";
-          //right bottom
-          if (height - mouseY <= 200) {
-            contextMenu.style.top = mouseY - menuHeight + "px";
-            contextMenu.style.borderRadius = "5px 5px 0 5px";
-          }
-        }
+  //If user pointerups/touches near right corner
+  if (width - mouseX <= 200) {
+    contextMenu.style.left = width - menuWidth + "px";
+    contextMenu.style.top = mouseY + "px";
+    //right bottom
+    if (height - mouseY <= 200) {
+      contextMenu.style.top = mouseY - menuHeight + "px";
+      contextMenu.style.borderRadius = "5px 5px 0 5px";
+    }
+  }
 
-        //left
-        else {
-          contextMenu.style.left = mouseX + "px";
-          contextMenu.style.top = mouseY + "px";
-          //left bottom
-          if (height - mouseY <= 200) {
-            contextMenu.style.top = mouseY - menuHeight + "px";
-            contextMenu.style.borderRadius = "5px 5px 5px 0";
-          }
-        }
+  //left
+  else {
+    contextMenu.style.left = mouseX + "px";
+    contextMenu.style.top = mouseY + "px";
+    //left bottom
+    if (height - mouseY <= 200) {
+      contextMenu.style.top = mouseY - menuHeight + "px";
+      contextMenu.style.borderRadius = "5px 5px 5px 0";
+    }
+  }
 
-        //display the menu
-        contextMenu.style.visibility = "visible";
-        selected_frame = item.id.split("_")[1];
-      },
-      { passive: false }
-    );
-  });
+  //display the menu
+  contextMenu.style.visibility = "visible";
+  selected_frame = getFrameID(item);
 }
 
 delete_menu_item.addEventListener("pointerup", () => {
@@ -310,48 +306,30 @@ duplicate_menu_item.addEventListener("pointerup", () => {
 });
 
 function deleteFrame(frame_index) {
-  if (frame_index < 0 || frame_index >= frame_amount || frame_amount <= 1)
+  if (frame_index < 0 || frame_index >= getFrameCount() || getFrameCount() <= 1)
     return;
-  if(curr_frame == frame_index) { 
-    let new_frame = (curr_frame - 1 + frame_amount) % frame_amount;
+
+  if (curr_frame == frame_index) {
+    let new_frame = (curr_frame - 1 + getFrameCount()) % getFrameCount();
     setCurrFrame(new_frame);
     focusPreview();
   }
-  document.getElementById("preview_" + frame_index).remove();
-  frame_amount -= 1;
+
+  getPreviewAt(frame_index).remove();
 }
 
 function duplicateFrame(frame_index) {
-  if (frame_index < 0 || frame_index >= frame_amount) return;
-  let source_canvas = document.getElementById("preview_" + frame_index);
+  if (frame_index < 0 || frame_index >= getFrameCount()) return;
+  let source_canvas = getPreviewAt(frame_index);
   let new_canvas = add_frame();
   new_canvas
     .getContext("2d")
     .drawImage(source_canvas, 0, 0, new_canvas.width, new_canvas.height);
+  frame_list.insertBefore(new_canvas, source_canvas.nextSibling);
 }
 
-//for double tap(works on touch devices)
-document.addEventListener("touchend", function (e) {
-  var currentTime = new Date().getTime();
-  //gap between two taps
-  var tapLength = currentTime - lastTap;
-  clearTimeout(timeout);
-  if (tapLength < 500 && tapLength > 0) {
-    //hide menu
-    contextMenu.style.visibility = "hidden";
-    e.preventDefault();
-  } else {
-    //timeout if user doesn't tap after 500ms
-    timeout = setTimeout(function () {
-      clearTimeout(timeout);
-    }, 500);
-  }
-  //lastTap set to current time
-  lastTap = currentTime;
-});
-
 //click outside the menu to close it (for click devices)
-document.addEventListener("pointerup", function (e) {
+document.addEventListener("pointerdown", function (e) {
   if (!contextMenu.contains(e.target)) {
     contextMenu.style.visibility = "hidden";
   }
