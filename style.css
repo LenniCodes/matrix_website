@@ -167,13 +167,13 @@ button:active {
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 20px;
     display: flex;
     gap: 10px;
 
     user-select: none;
     align-items: flex-start;
     padding-bottom: 20px;
+    padding-top: 20px;
 
     scroll-behavior: smooth;
     overflow-x: auto;
@@ -183,6 +183,12 @@ button:active {
 
 #frame-list::-webkit-scrollbar {
   display: none;
+}
+
+#frames {
+    width: fit-content;
+    flex-shrink: 0;
+    display: flex;
 }
 
 #add-frame, #import-frame {
@@ -208,6 +214,10 @@ button:active {
 }
 
 .preview-frame {
+    display: inline-block;
+    position: relative;
+    border-radius: 15px;
+
     margin-left: 5px;
     margin-right: 5px;
     border-style: solid;
@@ -219,12 +229,16 @@ button:active {
 
     touch-action: pan-x;
     transition: transform 150ms ease;
+
+    transform: scale(1.1);
 }
 
 .preview-frame.selected-preview {
     border-width: 3px;
     padding: 4px;
     background-clip: content-box;
+
+    transform: scale(1.0);
 }
 
 .preview-canvas {
@@ -235,19 +249,17 @@ button:active {
     height: 70px;
 }
 
-.preview-frame {
-    display: inline-block;
-    position: relative;
-    border-radius: 10px;
-}
-
 .preview-frame img {
     position: absolute;
     top: 6px;
     right: 15px;
-    pointer-events: none;
+    pointer-events: auto;
 
     visibility: hidden;
+}
+
+.settings-icon {
+    cursor: pointer;
 }
 
 .preview-frame.selected-preview img {

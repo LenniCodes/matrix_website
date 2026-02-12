@@ -4,6 +4,7 @@ let playing = false;
 
 const drawing_canvas = document.getElementById("drawing-canvas");
 const frame_list = document.getElementById("frames");
+const frame_list_container = document.getElementById("frame-list");
 const preview_template = document.getElementById("preview-template");
 const contextMenu = document.getElementById("context-menu");
 
@@ -77,9 +78,9 @@ function add_frame() {
   });
 
   new_preview
-    .getElementsByClassName("settings_icon")[0]
+    .getElementsByClassName("settings-icon")[0]
     .addEventListener("pointerup", (e) => {
-      showContextMenu(new_preview);
+      showContextMenu(new_preview, e);
     });
 
   addDragAndDrop(new_preview);
@@ -88,11 +89,6 @@ function add_frame() {
 
   return new_preview;
 }
-
-frame_list.addEventListener("wheel", function (e) {
-  e.preventDefault();
-  frame_list.scrollLeft += e.deltaY;
-});
 
 function getFrameID(frame) {
   return Array.from(frame_list.children).indexOf(frame);
@@ -184,17 +180,15 @@ function setCurrFrame(frame_index) {
   if (curr_frame === frame_index) return;
   if (frame_index < 0 || frame_index >= getFrameCount()) return;
 
-  if (curr_frame >= 0) {
-    let former_preview = getCurrPreview();
-    former_preview.classList.remove("selected-preview");
-  }
+  Array.from(frame_list.children).forEach((preview) => {
+    preview.classList.remove("selected-preview");
+  });
 
   curr_frame = frame_index;
   let new_preview = getCurrPreview(); 
   new_preview.classList.add("selected-preview");
 
-  // TODO: "source_canvas is undefined"
-  transferToPreview(getCurrCanvas());
+  transferFromPreview();
 }
 
 function focusPreview() {
@@ -208,15 +202,28 @@ function focusPreview() {
 
 // preview update
 
-function transferToPreview(source_canvas) {
-  let source_context = source_canvas.getContext("2d");
-  source_context.clearRect(0, 0, source_canvas.width, source_canvas.height);
-  source_context.drawImage(
+function transferToPreview() {
+  let dest_canvas = getCurrCanvas();
+  let dest_context = dest_canvas.getContext("2d");
+  dest_context.clearRect(0, 0, dest_canvas.width, dest_canvas.height);
+  dest_context.drawImage(
     drawing_canvas,
     0,
     0,
-    source_canvas.width,
-    source_canvas.height,
+    dest_canvas.width,
+    dest_canvas.height,
+  );
+}
+
+function transferFromPreview() {
+  let source_canvas = getCurrCanvas();
+  let dest_context = drawing_canvas.getContext("2d");
+  dest_context.clearRect(0, 0, drawing_canvas.width, drawing_canvas.height);
+  dest_context.drawImage(
+    source_canvas,
+    0, 0,
+    drawing_canvas.width,
+    drawing_canvas.height,
   );
 }
 
@@ -259,8 +266,7 @@ eraser_tool.addEventListener("pointerup", () => {
 
 // context menu for frames
 
-// TODO: change menu style etc.
-function showContextMenu(item) {
+function showContextMenu(item, e) {
   let mouseX = e.clientX || e.touches[0].clientX;
   let mouseY = e.clientY || e.touches[0].clientY;
   let menuHeight = contextMenu.getBoundingClientRect().height;
@@ -309,10 +315,16 @@ function deleteFrame(frame_index) {
   if (frame_index < 0 || frame_index >= getFrameCount() || getFrameCount() <= 1)
     return;
 
-  if (curr_frame == frame_index) {
-    let new_frame = (curr_frame - 1 + getFrameCount()) % getFrameCount();
+  const removing_current = curr_frame === frame_index;
+  const removing_before = frame_index < curr_frame;
+  
+  if (removing_current) {
+    const new_frame = (frame_index-1+getFrameCount())%getFrameCount();
     setCurrFrame(new_frame);
     focusPreview();
+  } else if (removing_before) {
+    curr_frame -= 1;
+    setCurrFrame(curr_frame);
   }
 
   getPreviewAt(frame_index).remove();
@@ -320,12 +332,12 @@ function deleteFrame(frame_index) {
 
 function duplicateFrame(frame_index) {
   if (frame_index < 0 || frame_index >= getFrameCount()) return;
-  let source_canvas = getPreviewAt(frame_index);
-  let new_canvas = add_frame();
-  new_canvas
-    .getContext("2d")
-    .drawImage(source_canvas, 0, 0, new_canvas.width, new_canvas.height);
-  frame_list.insertBefore(new_canvas, source_canvas.nextSibling);
+  let source_preview = getPreviewAt(frame_index);
+  let new_preview = add_frame();
+  new_canvas = new_preview.getElementsByClassName("preview-canvas")[0];
+    new_canvas.getContext("2d")
+    .drawImage(getCurrCanvas(), 0, 0, new_canvas.width, new_canvas.height);
+  frame_list.insertBefore(new_preview, source_preview.nextSibling);
 }
 
 //click outside the menu to close it (for click devices)
@@ -335,26 +347,68 @@ document.addEventListener("pointerdown", function (e) {
   }
 });
 
-// draggable frames
+// frame preview navigation (drag and scroll)
+
+frame_list_container.addEventListener("wheel", function (e) {
+  const useDeltaX = Math.abs(e.deltaX) > 0;
+  if (useDeltaX) return;
+  e.preventDefault();
+  frame_list_container.scrollLeft += delta;
+});
+
+let pointerStartTime = 0;
+let pointerStartX = 0;
+let pointerStartY = 0;
+const DRAG_THRESHOLD_MS = 500; // time in ms to consider it a drag
 
 function addDragAndDrop(item) {
+  item.addEventListener("pointerdown", (e) => {
+    pointerStartTime = Date.now();
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+  });
+
+  item.addEventListener("pointermove", (e) => {
+    const elapsed = Date.now() - pointerStartTime;
+    const isDrag = elapsed > DRAG_THRESHOLD_MS;
+    
+    if (!isDrag) {
+      // Not a drag yet, so scroll the frame list by the pointer delta
+      const deltaX = e.clientX - pointerStartX;
+      frame_list_container.scrollLeft -= deltaX*4;
+
+      // TODO: calculate scrollLeft by setting it directly not subtracting.
+      
+      // Update start position for next movement
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
+      pointerStartTime = Date.now();
+    }
+  });
+
   item.addEventListener("dragstart", (e) => {
+    const elapsed = Date.now() - pointerStartTime;
+    if (elapsed < DRAG_THRESHOLD_MS) {
+      e.preventDefault();
+      return;
+    }
     dragged = e.target;
     e.dataTransfer.effectAllowed = "move";
   });
-
-  item.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    const target = e.target;
-    if (target !== dragged) {
-      const rect = target.getBoundingClientRect();
-      const midpoint = rect.left + rect.width / 2;
-
-      if (e.clientX < midpoint) {
-        target.parentNode.insertBefore(dragged, target);
-      } else {
-        target.parentNode.insertBefore(dragged, target.nextElementSibling);
-      }
-    }
-  });
 }
+
+// dragover listener on frames container only
+frame_list.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  const target = e.target.closest(".preview-frame");
+  if (target && target !== dragged) {
+    const rect = target.getBoundingClientRect();
+    const midpoint = rect.left + rect.width / 2;
+
+    if (e.clientX < midpoint) {
+      target.parentNode.insertBefore(dragged, target);
+    } else {
+      target.parentNode.insertBefore(dragged, target.nextElementSibling);
+    }
+  }
+});
