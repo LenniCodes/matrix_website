@@ -2,7 +2,6 @@
     margin: 0;
     padding: 0;
     font-family: "Jersey 10", sans-serif;
-
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
@@ -221,7 +220,7 @@ button:active {
     padding-bottom: 110px;
     padding-top: 20px;
 
-    scroll-behavior: smooth;
+    /*scroll-behavior: smooth;*/
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -281,6 +280,7 @@ button:active {
 
     touch-action: pan-x;
     transition: transform 150ms ease;
+    user-select: none;
 
     transform: scale(1.1);
 }
@@ -293,6 +293,11 @@ button:active {
     transform: scale(1.0);
 }
 
+.preview-frame.dragging {
+    opacity: 0.5;
+    transform: scale(1.15);
+}
+
 .preview-canvas {
     display: block;
     border-radius: 10px;
@@ -303,8 +308,8 @@ button:active {
 
 .preview-frame img {
     position: absolute;
-    top: 6px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
     pointer-events: auto;
 
     visibility: hidden;

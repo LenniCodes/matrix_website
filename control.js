@@ -39,7 +39,15 @@ let selected_frame = -1;
 const delete_menu_item = document.getElementById("menu-delete");
 const duplicate_menu_item = document.getElementById("menu-duplicate");
 
-let dragged;
+let dragged = null;
+let dragging = false;
+
+let pointerStartTime = -1;
+let pointerStartX = 0;
+let pointerStartY = 0;
+let pointerMoved = false;
+const DRAG_THRESHOLD_MS = 300;
+
 
 /*window.onbeforeunload = function(){
     return "Did you save your stuff?";
@@ -355,17 +363,8 @@ document.addEventListener("pointerdown", function (e) {
 
 // frame preview navigation (drag and scroll)
 
-let pointerStartTime = -1;
-let pointerStartX = 0;
-let pointerStartY = 0;
-let pointerMoved = false;
-const DRAG_THRESHOLD_MS = 300; // time in ms to consider it a drag
-
 document.addEventListener("pointerup", (e) => {
-  pointerStartTime = -1;
-  pointerStartX = 0;
-  pointerStartY = 0;
-  pointerMoved = false;
+  stopDragging();
 });
 
 function addDragAndDrop(item) {
@@ -373,49 +372,67 @@ function addDragAndDrop(item) {
     pointerStartTime = Date.now();
     pointerStartX = e.clientX;
     pointerStartY = e.clientY;
-  });
-
-  item.addEventListener("pointermove", (e) => {
-    if(pointerStartTime < 0) return; 
-    const elapsed = Date.now() - pointerStartTime;
-    const isDrag = elapsed > DRAG_THRESHOLD_MS;
-
-    if (!isDrag) {
-      // Not a drag yet, so scroll the frame list by the pointer delta
-      pointerMoved = true;
-      const deltaX = e.clientX - pointerStartX;
-      frame_list_container.scrollLeft -= deltaX * 4;
-
-      // Update start position for next movement
-      pointerStartX = e.clientX;
-      pointerStartY = e.clientY;
-      pointerStartTime = Date.now();
-    } 
+    dragged = item;
   });
 
   item.addEventListener("dragstart", (e) => {
-    const elapsed = Date.now() - pointerStartTime;
-    if (elapsed < DRAG_THRESHOLD_MS) {
-      e.preventDefault();
-      return;
-    }
-    dragged = e.target;
-    e.dataTransfer.effectAllowed = "move";
+    e.preventDefault();
   });
+
 }
 
-// dragover listener on frames container only
-frame_list.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  const target = e.target.closest(".preview-frame");
-  if (target && target !== dragged) {
-    const rect = target.getBoundingClientRect();
-    const midpoint = rect.left + rect.width / 2;
+document.addEventListener("pointermove", (e) => {
+  if (pointerStartTime < 0) return;
+  const elapsed = Date.now() - pointerStartTime;
+  const isDrag = elapsed > DRAG_THRESHOLD_MS;
 
-    if (e.clientX < midpoint) {
-      target.parentNode.insertBefore(dragged, target);
-    } else {
-      target.parentNode.insertBefore(dragged, target.nextElementSibling);
+  if (!isDrag) {
+    // Not a drag yet, so scroll the frame list by the pointer delta
+    pointerMoved = true;
+    const deltaX = e.clientX - pointerStartX;
+    frame_list_container.scrollLeft -= deltaX * 4;
+
+    // Update start position for next movement
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+    pointerStartTime = Date.now();
+    stopDragging();
+  } else {
+    if (!dragging) {
+      dragging = true;
+      dragged.classList.add("dragging");
+    }
+
+    if (!dragging) return;
+
+    e.preventDefault();
+
+    const target = document.elementFromPoint(e.clientX, e.clientY)
+      ?.closest(".preview-frame");
+
+    if (target && target !== dragged) {
+      const rect = target.getBoundingClientRect();
+      const midpoint = rect.left + rect.width / 2;
+
+      if (e.clientX < midpoint) {
+        target.parentNode.insertBefore(dragged, target);
+      } else {
+        target.parentNode.insertBefore(dragged, target.nextElementSibling);
+      }
     }
   }
 });
+
+function stopDragging() {
+  if (dragged) {
+    pointerStartTime = -1;
+    pointerStartX = 0;
+    pointerStartY = 0;
+    pointerMoved = false;
+
+    dragged.classList.remove("dragging");
+    dragged = null;
+    dragging = false;
+  }
+}
+
