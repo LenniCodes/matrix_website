@@ -8,7 +8,7 @@ scroll_div.addEventListener("scroll", () => {
     changeFrontGradient(false);
   }
 
-  if (scroll_div.scrollLeft + scroll_div.clientWidth < scroll_div.scrollWidth) {
+  if (scroll_div.scrollLeft + scroll_div.clientWidth < scroll_div.scrollWidth - 10) {
     changeBackGradient(true);
   } else {
     changeBackGradient(false);

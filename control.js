@@ -74,7 +74,9 @@ function add_frame() {
   new_preview.draggable = true;
 
   new_preview.addEventListener("pointerup", () => {
-    setCurrFrame(getFrameID(new_preview));
+    if (!pointerMoved) {
+      setCurrFrame(getFrameID(new_preview));
+    }
   });
 
   new_preview
@@ -102,8 +104,12 @@ function getCurrPreview() {
   return getPreviewAt(curr_frame);
 }
 
+function getCanvasAt(frame_index) {
+  return getPreviewAt(frame_index).getElementsByClassName("preview-canvas")[0];
+}
+
 function getCurrCanvas() {
-  return getCurrPreview().getElementsByClassName("preview-canvas")[0];
+  return getCanvasAt(curr_frame);
 }
 
 function getFrameCount() {
@@ -126,10 +132,10 @@ document.addEventListener("keyup", (event) => {
 function triggerPlayPause() {
   playing = !playing;
   if (playing) {
-    play_button.innerHTML = '<i class="material-icons">pause</i>';
+    play_button.innerHTML = '<img src="assets/icons/pause.svg">';
     playAnimation();
   } else {
-    play_button.innerHTML = '<i class="material-icons">play_arrow</i>';
+    play_button.innerHTML = '<img src="assets/icons/play_arrow.svg">';
   }
 }
 
@@ -185,7 +191,7 @@ function setCurrFrame(frame_index) {
   });
 
   curr_frame = frame_index;
-  let new_preview = getCurrPreview(); 
+  let new_preview = getCurrPreview();
   new_preview.classList.add("selected-preview");
 
   transferFromPreview();
@@ -235,8 +241,7 @@ color_picker.addEventListener("input", (event) => {
 });
 
 function updatePickerFront() {
-  color_tool.getElementsByClassName("material-icons")[0].style.color =
-    curr_color;
+  color_tool.style.backgroundColor = curr_color;
 }
 
 // tool selection
@@ -317,9 +322,9 @@ function deleteFrame(frame_index) {
 
   const removing_current = curr_frame === frame_index;
   const removing_before = frame_index < curr_frame;
-  
+
   if (removing_current) {
-    const new_frame = (frame_index-1+getFrameCount())%getFrameCount();
+    const new_frame = (frame_index - 1 + getFrameCount()) % getFrameCount();
     setCurrFrame(new_frame);
     focusPreview();
   } else if (removing_before) {
@@ -335,7 +340,7 @@ function duplicateFrame(frame_index) {
   let source_preview = getPreviewAt(frame_index);
   let new_preview = add_frame();
   new_canvas = new_preview.getElementsByClassName("preview-canvas")[0];
-    new_canvas.getContext("2d")
+  new_canvas.getContext("2d")
     .drawImage(getCurrCanvas(), 0, 0, new_canvas.width, new_canvas.height);
   frame_list.insertBefore(new_preview, source_preview.nextSibling);
 }
@@ -349,17 +354,18 @@ document.addEventListener("pointerdown", function (e) {
 
 // frame preview navigation (drag and scroll)
 
-frame_list_container.addEventListener("wheel", function (e) {
-  const useDeltaX = Math.abs(e.deltaX) > 0;
-  if (useDeltaX) return;
-  e.preventDefault();
-  frame_list_container.scrollLeft += delta;
-});
-
-let pointerStartTime = 0;
+let pointerStartTime = -1;
 let pointerStartX = 0;
 let pointerStartY = 0;
-const DRAG_THRESHOLD_MS = 500; // time in ms to consider it a drag
+let pointerMoved = false;
+const DRAG_THRESHOLD_MS = 300; // time in ms to consider it a drag
+
+document.addEventListener("pointerup", (e) => {
+  pointerStartTime = -1;
+  pointerStartX = 0;
+  pointerStartY = 0;
+  pointerMoved = false;
+});
 
 function addDragAndDrop(item) {
   item.addEventListener("pointerdown", (e) => {
@@ -369,21 +375,21 @@ function addDragAndDrop(item) {
   });
 
   item.addEventListener("pointermove", (e) => {
+    if(pointerStartTime < 0) return; 
     const elapsed = Date.now() - pointerStartTime;
     const isDrag = elapsed > DRAG_THRESHOLD_MS;
-    
+
     if (!isDrag) {
       // Not a drag yet, so scroll the frame list by the pointer delta
+      pointerMoved = true;
       const deltaX = e.clientX - pointerStartX;
-      frame_list_container.scrollLeft -= deltaX*4;
+      frame_list_container.scrollLeft -= deltaX * 4;
 
-      // TODO: calculate scrollLeft by setting it directly not subtracting.
-      
       // Update start position for next movement
       pointerStartX = e.clientX;
       pointerStartY = e.clientY;
       pointerStartTime = Date.now();
-    }
+    } 
   });
 
   item.addEventListener("dragstart", (e) => {

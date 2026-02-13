@@ -8,6 +8,47 @@ body {
     background-color: #bdabcf;
 }
 
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+#overlay.showing {
+    display: flex;
+}
+
+.loader {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #ffffff;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+
+    z-index: 10000;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 canvas {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
@@ -37,10 +78,11 @@ canvas {
     display: block;
     border-radius: 20px;
     position: relative;
+    touch-action: none;
 }
 
 #tool-bar {
-   position: absolute;
+    position: absolute;
     right: 100%;
     width: fit-content;
     top: 0;
@@ -48,7 +90,7 @@ canvas {
 }
 
 #undo-bar {
-   position: absolute;
+    position: absolute;
     left: 100%;
     width: fit-content;
     top: 0;
@@ -75,20 +117,20 @@ canvas {
 }
 
 .tool-button.selected-tool {
-  background-color: #80669b;
+    background-color: #80669b;
 }
 
-.tool-button.selected-tool i {
-    color: #ffffffaa;
+.tool-button.selected-tool img {
+    filter: brightness(0) saturate(100%) invert(99%) sepia(1%) saturate(1926%) hue-rotate(234deg) brightness(114%) contrast(78%);
 }
 
-.tool-button i {
-    font-size: 28px;
-    transform: translateY(-2px);
-    color: #80669b;
+.tool-button img {
+    width: 35px;
+    filter: brightness(0) saturate(100%) invert(47%) sepia(7%) saturate(2134%) hue-rotate(227deg) brightness(90%) contrast(89%);
 }
 
-#color-button i {
+#color-icon {
+    filter: brightness(0) saturate(100%) invert(100%) sepia(99%) saturate(2%) hue-rotate(92deg) brightness(104%) contrast(101%);
 }
 
 #color-picker {
@@ -96,7 +138,7 @@ canvas {
     top: 0;
     width: 55px;
     height: 55px;
-    display: none;
+    opacity: 0;
     z-index: 10;
     user-select: none;
 }
@@ -123,8 +165,8 @@ button:hover {
 }
 
 button:active {
-  box-shadow: 0 5px #00000011;
-  transform: translateY(4px);
+    box-shadow: 0 5px #00000011;
+    transform: translateY(4px);
 }
 
 #frame-list-container {
@@ -182,7 +224,7 @@ button:active {
 }
 
 #frame-list::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 #frames {
@@ -191,7 +233,8 @@ button:active {
     display: flex;
 }
 
-#add-frame, #import-frame {
+#add-frame,
+#import-frame {
     border-radius: 10px;
     background-color: #ffffffaa;
     border-style: solid;
@@ -200,7 +243,7 @@ button:active {
     aspect-ratio: 1.0;
     padding: 0px;
     height: 82px;
-    margin: 0px;
+    margin-right: 20px;
     box-sizing: border-box;
     display: flex;
     justify-content: center;
@@ -208,7 +251,12 @@ button:active {
     transition: 0.2s;
 }
 
-#add-frame:active, #import-frame:active {
+#add-frame img {
+    filter: brightness(0) saturate(100%) invert(21%) sepia(0%) saturate(1645%) hue-rotate(215deg) brightness(101%) contrast(92%);
+}
+
+#add-frame:active,
+#import-frame:active {
     background-color: #ffffff77;
     transform: scale(0.9);
 }
@@ -222,7 +270,7 @@ button:active {
     margin-right: 5px;
     border-style: solid;
     border-color: white;
-    
+
     border-width: 0px;
     padding: 7px;
     background-clip: padding-box;
@@ -267,23 +315,23 @@ button:active {
 }
 
 #context-menu {
- background-color: #ffffff;
- box-shadow: 0 0 20px rgba(37, 40, 42, 0.22);
- color: #1f194c;
- padding: 10px;
- font-size: 25px;
- position: fixed;
- visibility: hidden;
- border-radius: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 0 20px rgba(37, 40, 42, 0.22);
+    color: #1f194c;
+    padding: 10px;
+    font-size: 25px;
+    position: fixed;
+    visibility: hidden;
+    border-radius: 20px;
 }
 
 .item {
- padding: 5px;
+    padding: 5px;
 }
 
 .item:hover {
- background-color: rgba(44, 141, 247, 0.2);
- cursor: pointer;
+    background-color: rgba(44, 141, 247, 0.2);
+    cursor: pointer;
 }
 
 .control-buttons {
@@ -295,21 +343,19 @@ button:active {
     display: flex;
 }
 
-.material-icons {
-    /* maybe do that cleanly later */
-    font-size:38px;
+.control-buttons button img {
+    width: 37px;
+    filter: brightness(0) saturate(100%) invert(77%) sepia(9%) saturate(680%) hue-rotate(227deg) brightness(90%) contrast(93%);
     margin-top: 5px;
 }
-
 
 .control-buttons button {
     width: 60px;
     height: 60px;
 }
 
-.control-buttons button:active .material-icons {
-    font-size: 44px;
-    
+.control-buttons button:active img {
+    transform: scale(1.1);
 }
 
 #export-button {

@@ -52,17 +52,17 @@ redo_tool.addEventListener("click", () => {
   }
 });
 
-document.addEventListener('mouseup', (e) => {
+document.addEventListener('pointerup', (e) => {
     mouse_down = false;
     isDrawing = false;
 });
 
-drawing_canvas.addEventListener('mousedown', (e) => {
+drawing_canvas.addEventListener('pointerdown', (e) => {
     mouse_down = true;
     saveCanvasState();
 });
 
-  drawing_canvas.addEventListener('mousemove', (e) => {
+  drawing_canvas.addEventListener('pointermove', (e) => {
     if(!isDrawing && mouse_down) {
       x = e.offsetX;
       y = e.offsetY;
@@ -75,7 +75,7 @@ drawing_canvas.addEventListener('mousedown', (e) => {
     }
   });
 
-  drawing_canvas.addEventListener('mouseup', (e) => {
+  drawing_canvas.addEventListener('pointerup', (e) => {
     if (isDrawing) {
       x = 0;
       y = 0;
@@ -86,7 +86,7 @@ drawing_canvas.addEventListener('mousedown', (e) => {
     mouse_down = false;
   });
 
-  document.getElementById("drawing-canvas").addEventListener("mouseup", () => {
+  document.getElementById("drawing-canvas").addEventListener("pointerup", () => {
     transferToPreview();
   });
 
