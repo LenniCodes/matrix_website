@@ -130,14 +130,22 @@ reset_tool.addEventListener("click", () => {
 function drawPixel(x, y) {
     context.beginPath();
     if(is_erasing) {
-      context.clearRect(Math.floor(x/40), Math.floor(y/40), 1, 1);
+      context.clearRect(fromBigToSmall(x), fromBigToSmall(y), 1, 1);
       return;
     } 
     context.fillStyle = curr_color;
-    context.fillRect(Math.floor(x/40), Math.floor(y/40), 1, 1);
+    context.fillRect(fromBigToSmall(x), fromBigToSmall(y), 1, 1);
+}
+
+function fromBigToSmall(coord) {
+    let canvas_width = drawing_canvas.offsetWidth;
+    let scale_factor = 10 / canvas_width;
+    return Math.floor(coord * scale_factor);
 }
 
 function drawLine(x1, y1, x2, y2) {
+    
+
     context.beginPath();
     if(is_erasing) {
       // TODO: better eraser line
@@ -146,8 +154,8 @@ function drawLine(x1, y1, x2, y2) {
       context.strokeStyle = curr_color;
     }
     context.lineWidth = 1;
-    context.moveTo(Math.floor(x1/40) + 0.5, Math.floor(y1/40) + 0.5);
-    context.lineTo(Math.floor(x2/40) + 0.5, Math.floor(y2/40) + 0.5);
+    context.moveTo(fromBigToSmall(x1) + 0.5, fromBigToSmall(y1) + 0.5);
+    context.lineTo(fromBigToSmall(x2) + 0.5, fromBigToSmall(y2) + 0.5);
     context.stroke();
     context.closePath();
 }
@@ -162,7 +170,7 @@ function drawCircle(x, y, offsetX, offsetY) {
         context.strokeStyle = curr_color;
       }
       context.lineWidth = 1;
-      context.arc(Math.floor(x/40), Math.floor(y/40), radius/40, 0, 2*Math.PI);
+      context.arc(fromBigToSmall(x) + 0.5, fromBigToSmall(y) + 0.5, fromBigToSmall(radius), 0, 2*Math.PI);
       context.stroke();
       context.closePath();
     }

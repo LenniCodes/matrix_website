@@ -75,7 +75,7 @@ canvas {
 }
 
 #drawing-canvas {
-    width: 400px;
+    min-width: 400px;
     aspect-ratio: 1.0;
     border: 2px solid black;
     margin-top: 20px;
@@ -175,7 +175,7 @@ button:active {
 
 #frame-list-container {
     max-width: 50%;
-    min-width: 400px;
+    min-width: 360px;
     position: relative;
     width: fit-content;
     margin-left: auto;
@@ -341,7 +341,7 @@ button:active {
 .control-buttons {
     width: 250px;
     position: fixed;
-    bottom: 40px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -365,4 +365,47 @@ button:active {
 #export-button {
     margin-top: 20px;
     margin-right: 20px;
+}
+
+@media (max-width: 650px) {
+
+    #operation-space {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #tool-bar,
+    #undo-bar {
+        position: static;
+        margin: 10px 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        overflow-x: auto;
+        padding-top: 10px;
+    }
+
+    #tool-bar {
+        order: 1;
+    }
+
+    #drawing-canvas {
+        min-width: 360px;
+    }
+
+    #frame-list {
+        padding-top: 5px;
+    }
+
+    #drawing-canvas-container {
+        order: 2;
+    }
+
+    #undo-bar {
+        order: 3;
+    }
+
+
 }

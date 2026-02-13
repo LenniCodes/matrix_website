@@ -76,6 +76,7 @@ function add_frame() {
   new_preview.addEventListener("pointerup", () => {
     if (!pointerMoved) {
       setCurrFrame(getFrameID(new_preview));
+      focusPreview();
     }
   });
 
@@ -359,10 +360,6 @@ let pointerStartX = 0;
 let pointerStartY = 0;
 let pointerMoved = false;
 const DRAG_THRESHOLD_MS = 300; // time in ms to consider it a drag
-
-document.addEventListener("wheel", (e) => {
-  e.preventDefault();
-}, { passive: false });
 
 document.addEventListener("pointerup", (e) => {
   pointerStartTime = -1;
