@@ -17,17 +17,17 @@ let last_frame_id = curr_frame;
 
 function saveCanvasState() {
   checkSession();
-  if(undo_stack.length >= MAX_UNDO) {
+  if (undo_stack.length >= MAX_UNDO) {
     undo_stack.shift();
   }
-  undo_stack.push(context.getImageData(0,0,10,10));
+  undo_stack.push(context.getImageData(0, 0, 10, 10));
 
   // clear redo stack on new action
   redo_stack = [];
 }
 
 function checkSession() {
-  if(last_frame_id !== curr_frame) {
+  if (last_frame_id !== curr_frame) {
     undo_stack = [];
     redo_stack = [];
     last_frame_id = curr_frame;
@@ -36,157 +36,161 @@ function checkSession() {
 
 undo_tool.addEventListener("click", () => {
   checkSession();
-  if(undo_stack.length > 0) {
-    redo_stack.push(context.getImageData(0,0,10,10));
-    context.putImageData(undo_stack.pop(), 0,0);
+  if (undo_stack.length > 0) {
+    redo_stack.push(context.getImageData(0, 0, 10, 10));
+    context.putImageData(undo_stack.pop(), 0, 0);
     transferToPreview();
   }
 });
 
 redo_tool.addEventListener("click", () => {
   checkSession();
-  if(redo_stack.length > 0) {
-    undo_stack.push(context.getImageData(0,0,10,10));
-    context.putImageData(redo_stack.pop(), 0,0);
+  if (redo_stack.length > 0) {
+    undo_stack.push(context.getImageData(0, 0, 10, 10));
+    context.putImageData(redo_stack.pop(), 0, 0);
     transferToPreview();
   }
 });
 
 document.addEventListener('pointerup', (e) => {
-    mouse_down = false;
-    isDrawing = false;
+  mouse_down = false;
+  isDrawing = false;
 });
 
 drawing_canvas.addEventListener('pointerdown', (e) => {
-    mouse_down = true;
-    saveCanvasState();
+  mouse_down = true;
+  saveCanvasState();
 });
 
-  drawing_canvas.addEventListener('pointermove', (e) => {
-    if(!isDrawing && mouse_down) {
-      x = e.offsetX;
-      y = e.offsetY;
-      isDrawing = true;
-      buffer_canvas = context.getImageData(0,0,10,10);
-    }
-
-    if (isDrawing) {
-      holdingDraw(e.offsetX, e.offsetY);
-    }
-  });
-
-  drawing_canvas.addEventListener('pointerup', (e) => {
-    if (isDrawing) {
-      x = 0;
-      y = 0;
-      isDrawing = false;
-    } else {
-      pointDraw(e.offsetX, e.offsetY);
-    }
-    mouse_down = false;
-  });
-
-  document.getElementById("drawing-canvas").addEventListener("pointerup", () => {
-    transferToPreview();
-  });
-
-  document.getElementById("drawing-canvas").addEventListener("mouseleave", () => {
-      transferToPreview();
-  });
-
-  function holdingDraw(offsetX, offsetY) {
-    if(curr_tool === pencil_tool) {
-      drawPixel(offsetX, offsetY);
-      x = offsetX;
-      y = offsetY;
-    } else if (curr_tool === brush_tool) {
-      drawLine(x, y, offsetX, offsetY);
-      x = offsetX;
-      y = offsetY;
-    } else if (curr_tool === line_tool) {
-      fallbackToBuffer();
-      drawLine(x, y, offsetX, offsetY);
-    } else if (curr_tool === circle_tool) {
-      fallbackToBuffer();
-      drawCircle(x, y, offsetX, offsetY);
-    }
+drawing_canvas.addEventListener('pointermove', (e) => {
+  if (!isDrawing && mouse_down) {
+    x = e.offsetX;
+    y = e.offsetY;
+    isDrawing = true;
+    buffer_canvas = context.getImageData(0, 0, 10, 10);
   }
+
+  if (isDrawing) {
+    holdingDraw(e.offsetX, e.offsetY);
+  }
+});
+
+drawing_canvas.addEventListener('pointerup', (e) => {
+  if (isDrawing) {
+    x = 0;
+    y = 0;
+    isDrawing = false;
+  } else {
+    pointDraw(e.offsetX, e.offsetY);
+  }
+  mouse_down = false;
+});
+
+document.getElementById("drawing-canvas").addEventListener("pointerup", () => {
+  transferToPreview();
+});
+
+document.getElementById("drawing-canvas").addEventListener("mouseleave", () => {
+  transferToPreview();
+});
+
+function holdingDraw(offsetX, offsetY) {
+  if (curr_tool === pencil_tool) {
+    drawPixel(offsetX, offsetY);
+    x = offsetX;
+    y = offsetY;
+  } else if (curr_tool === brush_tool) {
+    drawLine(x, y, offsetX, offsetY);
+    x = offsetX;
+    y = offsetY;
+  } else if (curr_tool === line_tool) {
+    fallbackToBuffer();
+    drawLine(x, y, offsetX, offsetY);
+  } else if (curr_tool === circle_tool) {
+    fallbackToBuffer();
+    drawCircle(x, y, offsetX, offsetY);
+  }
+}
 
 function pointDraw(x, y) {
   if (curr_tool === fill_tool) {
-      fill();
+    fill();
     transferToPreview();
-    } else {
-      drawPixel(x, y);
-      transferToPreview();
-    }
+  } else {
+    drawPixel(x, y);
+    transferToPreview();
+  }
 }
 
 reset_tool.addEventListener("click", () => {
+  requestAnimationFrame(() => {
     reset();
-    transferToPreview();
+    requestAnimationFrame(() => {
+      transferToPreview();
+    });
+  });
 });
 
 function drawPixel(x, y) {
-    context.beginPath();
-    if(is_erasing) {
-      context.clearRect(fromBigToSmall(x), fromBigToSmall(y), 1, 1);
-      return;
-    } 
-    context.fillStyle = curr_color;
-    context.fillRect(fromBigToSmall(x), fromBigToSmall(y), 1, 1);
+  context.beginPath();
+  if (is_erasing) {
+    context.clearRect(fromBigToSmall(x), fromBigToSmall(y), 1, 1);
+    return;
+  }
+  context.fillStyle = curr_color;
+  context.fillRect(fromBigToSmall(x), fromBigToSmall(y), 1, 1);
 }
 
 function fromBigToSmall(coord) {
-    let canvas_width = drawing_canvas.offsetWidth;
-    let scale_factor = 10 / canvas_width;
-    return Math.floor(coord * scale_factor);
+  let canvas_width = drawing_canvas.offsetWidth;
+  let scale_factor = 10 / canvas_width;
+  return Math.floor(coord * scale_factor);
 }
 
 function drawLine(x1, y1, x2, y2) {
-    
 
-    context.beginPath();
-    if(is_erasing) {
-      // TODO: better eraser line
-      context.strokeStyle = '#202020';
-    } else {
-      context.strokeStyle = curr_color;
-    }
-    context.lineWidth = 1;
-    context.moveTo(fromBigToSmall(x1) + 0.5, fromBigToSmall(y1) + 0.5);
-    context.lineTo(fromBigToSmall(x2) + 0.5, fromBigToSmall(y2) + 0.5);
-    context.stroke();
-    context.closePath();
+
+  context.beginPath();
+  if (is_erasing) {
+    // TODO: better eraser line
+    context.strokeStyle = '#202020';
+  } else {
+    context.strokeStyle = curr_color;
+  }
+  context.lineWidth = 1;
+  context.moveTo(fromBigToSmall(x1) + 0.5, fromBigToSmall(y1) + 0.5);
+  context.lineTo(fromBigToSmall(x2) + 0.5, fromBigToSmall(y2) + 0.5);
+  context.stroke();
+  context.closePath();
 }
 
 function drawCircle(x, y, offsetX, offsetY) {
   let radius = Math.sqrt(Math.pow((offsetX - x), 2) + Math.pow((offsetY - y), 2));
-      context.beginPath();
-      if(is_erasing) {
-         // TODO: better eraser circle
-        context.strokeStyle = "#202020";
-      } else {
-        context.strokeStyle = curr_color;
-      }
-      context.lineWidth = 1;
-      context.arc(fromBigToSmall(x) + 0.5, fromBigToSmall(y) + 0.5, fromBigToSmall(radius), 0, 2*Math.PI);
-      context.stroke();
-      context.closePath();
-    }
+  context.beginPath();
+  if (is_erasing) {
+    // TODO: better eraser circle
+    context.strokeStyle = "#202020";
+  } else {
+    context.strokeStyle = curr_color;
+  }
+  context.lineWidth = 1;
+  context.arc(fromBigToSmall(x) + 0.5, fromBigToSmall(y) + 0.5, fromBigToSmall(radius), 0, 2 * Math.PI);
+  context.stroke();
+  context.closePath();
+}
 
 
 function fallbackToBuffer() {
-    if(undo_stack.length > 0) {
-      context.putImageData(undo_stack[undo_stack.length - 1], 0,0);
-    }
+  if (undo_stack.length > 0) {
+    context.putImageData(undo_stack[undo_stack.length - 1], 0, 0);
+  }
 }
 
 function fill() {
-   context.beginPath();
-   context.fillStyle = curr_color;
-   context.rect(0,0,10,10);
-   context.fill();
+  context.beginPath();
+  context.fillStyle = curr_color;
+  context.rect(0, 0, 10, 10);
+  context.fill();
 }
 
 function reset() {
