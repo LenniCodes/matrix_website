@@ -392,6 +392,8 @@ button:active {
         gap: 10px;
         overflow-x: auto;
         padding-top: 10px;
+        padding-left: 10px;
+        padding-right: 10px;
     }
 
     #tool-bar {
@@ -400,6 +402,7 @@ button:active {
 
     #drawing-canvas {
         min-width: 360px;
+        margin-top: 10px;
     }
 
     #frame-list {
