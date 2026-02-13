@@ -6,7 +6,7 @@ const drawing_canvas = document.getElementById("drawing-canvas");
 const frame_list = document.getElementById("frames");
 const frame_list_container = document.getElementById("frame-list");
 const preview_template = document.getElementById("preview-template");
-const contextMenu = document.getElementById("context-menu");
+const context_menu = document.getElementById("context-menu");
 
 const play_button = document.getElementById("play-button");
 const next_button = document.getElementById("next-button");
@@ -283,46 +283,46 @@ eraser_tool.addEventListener("pointerup", () => {
 function showContextMenu(item, e) {
   let mouseX = e.clientX || e.touches[0].clientX;
   let mouseY = e.clientY || e.touches[0].clientY;
-  let menuHeight = contextMenu.getBoundingClientRect().height;
-  let menuWidth = contextMenu.getBoundingClientRect().width;
+  let menuHeight = context_menu.getBoundingClientRect().height;
+  let menuWidth = context_menu.getBoundingClientRect().width;
   let width = window.innerWidth;
   let height = window.innerHeight;
 
   //If user pointerups/touches near right corner
-  if (width - mouseX <= 200) {
-    contextMenu.style.left = width - menuWidth + "px";
-    contextMenu.style.top = mouseY + "px";
+  if (width - mouseX <= menuWidth) {
+    context_menu.style.left = width - menuWidth + "px";
+    context_menu.style.top = mouseY + "px";
     //right bottom
-    if (height - mouseY <= 200) {
-      contextMenu.style.top = mouseY - menuHeight + "px";
-      contextMenu.style.borderRadius = "5px 5px 0 5px";
+    if (height - mouseY <= menuHeight) {
+      context_menu.style.top = mouseY - menuHeight + "px";
+      context_menu.style.borderRadius = "5px 5px 0 5px";
     }
   }
 
   //left
   else {
-    contextMenu.style.left = mouseX + "px";
-    contextMenu.style.top = mouseY + "px";
+    context_menu.style.left = mouseX + "px";
+    context_menu.style.top = mouseY + "px";
     //left bottom
-    if (height - mouseY <= 200) {
-      contextMenu.style.top = mouseY - menuHeight + "px";
-      contextMenu.style.borderRadius = "5px 5px 5px 0";
+    if (height - mouseY <= menuHeight) {
+      context_menu.style.top = mouseY - menuHeight + "px";
+      context_menu.style.borderRadius = "5px 5px 5px 0";
     }
   }
 
   //display the menu
-  contextMenu.style.visibility = "visible";
+  context_menu.style.visibility = "visible";
   selected_frame = getFrameID(item);
 }
 
 delete_menu_item.addEventListener("pointerup", () => {
   deleteFrame(selected_frame);
-  contextMenu.style.visibility = "hidden";
+  context_menu.style.visibility = "hidden";
 });
 
 duplicate_menu_item.addEventListener("pointerup", () => {
   duplicateFrame(selected_frame);
-  contextMenu.style.visibility = "hidden";
+  context_menu.style.visibility = "hidden";
 });
 
 function deleteFrame(frame_index) {
@@ -356,8 +356,8 @@ function duplicateFrame(frame_index) {
 
 //click outside the menu to close it (for click devices)
 document.addEventListener("pointerdown", function (e) {
-  if (!contextMenu.contains(e.target)) {
-    contextMenu.style.visibility = "hidden";
+  if (!context_menu.contains(e.target)) {
+    context_menu.style.visibility = "hidden";
   }
 });
 
@@ -386,9 +386,14 @@ document.addEventListener("pointermove", (e) => {
   const elapsed = Date.now() - pointerStartTime;
   const isDrag = elapsed > DRAG_THRESHOLD_MS;
 
+  pointerMoved = true;
+
   if (!isDrag) {
+    // do not manually scroll for desktop devices
+    if(e.pointerType !== "mouse") {
+      return;
+    }
     // Not a drag yet, so scroll the frame list by the pointer delta
-    pointerMoved = true;
     const deltaX = e.clientX - pointerStartX;
     frame_list_container.scrollLeft -= deltaX * 4;
 
@@ -396,7 +401,6 @@ document.addEventListener("pointermove", (e) => {
     pointerStartX = e.clientX;
     pointerStartY = e.clientY;
     pointerStartTime = Date.now();
-    stopDragging();
   } else {
     if (!dragging) {
       dragging = true;

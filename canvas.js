@@ -123,12 +123,8 @@ function pointDraw(x, y) {
 }
 
 reset_tool.addEventListener("click", () => {
-  requestAnimationFrame(() => {
     reset();
-    requestAnimationFrame(() => {
-      transferToPreview();
-    });
-  });
+    transferToPreview();
 });
 
 function drawPixel(x, y) {
@@ -194,5 +190,5 @@ function fill() {
 }
 
 function reset() {
-  context.reset();
+  context.clearRect(0, 0, 10, 10);
 }
