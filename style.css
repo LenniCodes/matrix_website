@@ -181,6 +181,7 @@ button:active {
     margin-right: auto;
 }
 
+
 #gradient-left {
     position: absolute;
     left: 0;
@@ -214,16 +215,17 @@ button:active {
     margin-right: auto;
     display: flex;
     gap: 10px;
-
+    
     user-select: none;
     align-items: flex-start;
     padding-bottom: 110px;
     padding-top: 20px;
-
-    /*scroll-behavior: smooth;*/
+    
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+
+    touch-action: pan-x;
 }
 
 #frame-list::-webkit-scrollbar {
@@ -234,6 +236,12 @@ button:active {
     width: fit-content;
     flex-shrink: 0;
     display: flex;
+    touch-action: none;
+}
+
+#frames.contentdragging {
+    background-color: green;
+    touch-action: none;
 }
 
 #add-frame,

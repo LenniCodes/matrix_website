@@ -5,6 +5,7 @@ let playing = false;
 const drawing_canvas = document.getElementById("drawing-canvas");
 const frame_list = document.getElementById("frames");
 const frame_list_container = document.getElementById("frame-list");
+
 const preview_template = document.getElementById("preview-template");
 const context_menu = document.getElementById("context-menu");
 
@@ -45,21 +46,7 @@ let dragging = false;
 let pointerStartTime = -1;
 let pointerStartX = 0;
 let pointerStartY = 0;
-let pointerMoved = false;
 const DRAG_THRESHOLD_MS = 300;
-
-
-/*window.onbeforeunload = function(){
-    return "Did you save your stuff?";
-};*/
-
-// TODO: delete frame gesture, include global duration and per-frame duration settings
-//        do style changes with css classes not with js
-//      fix duplicate / delete issues with frame index order
-
-// TODO after PC tests: make it work on smartphones!!!
-
-// maybe todo after: include crossfade settings per frame, onion skinning option, own color picker, pixel perfect line/circle tool
 
 // init
 
@@ -81,18 +68,9 @@ function add_frame() {
   let new_preview = preview_template.content.firstElementChild.cloneNode(true);
   new_preview.draggable = true;
 
-  new_preview.addEventListener("pointerup", () => {
-    if (!pointerMoved) {
-      setCurrFrame(getFrameID(new_preview));
-      focusPreview();
-    }
-  });
+  addSelectable(new_preview);
 
-  new_preview
-    .getElementsByClassName("settings-icon")[0]
-    .addEventListener("pointerup", (e) => {
-      showContextMenu(new_preview, e);
-    });
+  addContextMenu(new_preview);
 
   addDragAndDrop(new_preview);
 
@@ -215,7 +193,7 @@ function focusPreview() {
   });
 }
 
-// preview update
+// preview update (maybe into canvas.js)
 
 function transferToPreview() {
   let dest_canvas = getCurrCanvas();
@@ -279,6 +257,14 @@ eraser_tool.addEventListener("pointerup", () => {
 });
 
 // context menu for frames
+
+function addContextMenu(preview_frame) {
+ preview_frame
+    .getElementsByClassName("settings-icon")[0]
+    .addEventListener("pointerup", (e) => {
+      showContextMenu(preview_frame, e);
+    });
+}
 
 function showContextMenu(item, e) {
   let mouseX = e.clientX || e.touches[0].clientX;
@@ -361,18 +347,103 @@ document.addEventListener("pointerdown", function (e) {
   }
 });
 
-// frame preview navigation (drag and scroll)
+// frame preview navigation (select, drag and scroll)
+
+const MOVE_THRESHOLD = 8;
+let gesture = "undecided";
+let action_happened = false;
+
+function addSelectable(preview_frame) {
+  preview_frame.addEventListener("pointerup", () => {
+    console.log("your mum");
+    if(!dragging) {
+      setCurrFrame(getFrameID(preview_frame));
+      focusPreview();
+      dragging = false;
+    }
+  });
+}
+
+document.addEventListener("pointermove", (e) => {
+  if (!dragged) return;
+
+  const dx = e.clientX - pointerStartX;
+  const dy = e.clientY - pointerStartY;
+
+  if (gesture === "undecided") {
+    if (Math.abs(dx) > MOVE_THRESHOLD) {
+      gesture = "scroll";
+      dragging = true;
+    } else if (Math.abs(dy) > MOVE_THRESHOLD && Date.now() - pointerStartTime > DRAG_THRESHOLD_MS) {
+      startDrag();
+    } else {
+      return;
+    }
+  }
+
+  if (gesture === "scroll") {
+    frame_list_container.scrollLeft -= dx;
+    pointerStartX = e.clientX;
+  }
+
+  if (gesture === "drag") {
+    e.preventDefault();
+    updateDrag(e);
+  }
+});
+
+function updateDrag(e) {
+  if (!dragged) return;
+
+  const target = document
+    .elementFromPoint(e.clientX, e.clientY)
+    ?.closest(".preview-frame");
+
+  if (!target || target === dragged) return;
+
+  const rect = target.getBoundingClientRect();
+  const midpoint = rect.left + rect.width / 2;
+
+  if (e.clientX < midpoint) {
+    target.parentNode.insertBefore(dragged, target);
+  } else {
+    target.parentNode.insertBefore(dragged, target.nextElementSibling);
+  }
+}
+
+function startDrag() {
+  if (!dragged) return;
+
+  gesture = "drag";
+  dragging = true;
+
+  dragged.classList.add("dragging");
+  //frame_list.classList.add("contentdragging");
+  //document.body.classList.add("no-select");
+}
 
 document.addEventListener("pointerup", (e) => {
   stopDragging();
 });
 
+document.addEventListener("pointercancel", (e) => {
+  stopDragging();
+});
+
 function addDragAndDrop(item) {
-  item.addEventListener("pointerdown", (e) => {
-    pointerStartTime = Date.now();
+    item.addEventListener("pointerdown", (e) => {
     pointerStartX = e.clientX;
     pointerStartY = e.clientY;
+    pointerStartTime = Date.now();
     dragged = item;
+    dragging = false;
+    gesture = "undecided";
+
+    setTimeout(() => {
+      if(gesture==="undecided") {
+        startDrag();
+      }
+    }, 400);
   });
 
   item.addEventListener("dragstart", (e) => {
@@ -381,62 +452,23 @@ function addDragAndDrop(item) {
 
 }
 
-document.addEventListener("pointermove", (e) => {
-  if (pointerStartTime < 0) return;
-  const elapsed = Date.now() - pointerStartTime;
-  const isDrag = elapsed > DRAG_THRESHOLD_MS;
-
-  pointerMoved = true;
-
-  if (!isDrag) {
-    // do not manually scroll for desktop devices
-    if(e.pointerType !== "mouse") {
-      return;
-    }
-    // Not a drag yet, so scroll the frame list by the pointer delta
-    const deltaX = e.clientX - pointerStartX;
-    frame_list_container.scrollLeft -= deltaX * 4;
-
-    // Update start position for next movement
-    pointerStartX = e.clientX;
-    pointerStartY = e.clientY;
-    pointerStartTime = Date.now();
-  } else {
-    if (!dragging) {
-      dragging = true;
-      dragged.classList.add("dragging");
-    }
-
-    if (!dragging) return;
-
-    e.preventDefault();
-
-    const target = document.elementFromPoint(e.clientX, e.clientY)
-      ?.closest(".preview-frame");
-
-    if (target && target !== dragged) {
-      const rect = target.getBoundingClientRect();
-      const midpoint = rect.left + rect.width / 2;
-
-      if (e.clientX < midpoint) {
-        target.parentNode.insertBefore(dragged, target);
-      } else {
-        target.parentNode.insertBefore(dragged, target.nextElementSibling);
-      }
-    }
-  }
+document.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
 });
 
 function stopDragging() {
-  if (dragged) {
-    pointerStartTime = -1;
-    pointerStartX = 0;
-    pointerStartY = 0;
-    pointerMoved = false;
-
+  // If we were dragging, finalize it
+  if (gesture === "drag" && dragged) {
     dragged.classList.remove("dragging");
-    dragged = null;
-    dragging = false;
   }
+  //frame_list.classList.remove("contentdragging");
+
+  // Reset all gesture state
+  gesture = null;
+  dragged = null;
+
+  pointerStartX = 0;
+  pointerStartY = 0;
+  pointerStartTime = 0;
 }
 
