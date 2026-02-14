@@ -382,6 +382,8 @@ button:active {
     margin-right: 20px;
 }
 
+
+/* adapt for smaller screens */
 @media (max-width: 650px) {
 
     #operation-space {
