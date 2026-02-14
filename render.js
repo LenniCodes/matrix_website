@@ -3,6 +3,7 @@ let overlay = document.getElementById("overlay");
 
 const render_dimension = 1000;
 
+// Export button: renders animation as GIF and downloads it
 export_button.addEventListener("pointerup", async () => {
     overlay.classList.add("showing");
     requestAnimationFrame(() => {
@@ -13,6 +14,7 @@ export_button.addEventListener("pointerup", async () => {
     });
 });
 
+// Renders all frames as a GIF animation and initiates download
 function renderToGif() {
     const big = document.createElement("canvas");
     big.width = render_dimension;
@@ -40,6 +42,7 @@ function renderToGif() {
     });
 }
 
+// Writes a blob to a file and triggers download in the browser
 function writeFile(filename, buffer, callback) {
     try {
         const blob = new Blob([buffer], { type: 'image/gif' });

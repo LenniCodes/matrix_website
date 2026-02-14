@@ -1,114 +1,14 @@
-let curr_frame = -1;
-let curr_color = "#ff0000";
 let playing = false;
-
-const drawing_canvas = document.getElementById("drawing-canvas");
-const frame_list = document.getElementById("frames");
-const frame_list_container = document.getElementById("frame-list");
-
-const preview_template = document.getElementById("preview-template");
-const context_menu = document.getElementById("context-menu");
-
 const play_button = document.getElementById("play-button");
 const next_button = document.getElementById("next-button");
 const previous_button = document.getElementById("previous-button");
 
-const add_button = document.getElementById("add-frame");
-const import_button = document.getElementById("import-frame");
-
-const color_picker = document.getElementById("color-picker");
-
-// shape tools
-const color_tool = document.getElementById("color-button");
-const pencil_tool = document.getElementById("pencil-button");
-const brush_tool = document.getElementById("brush-button");
-const fill_tool = document.getElementById("fill-button");
-const line_tool = document.getElementById("line-button");
-const circle_tool = document.getElementById("circle-button");
-
-// undo tools
-const reset_tool = document.getElementById("reset-button");
-const eraser_tool = document.getElementById("eraser-button");
-const undo_tool = document.getElementById("undo-button");
-const redo_tool = document.getElementById("redo-button");
-let is_erasing = false;
-
-const tools = [pencil_tool, brush_tool, fill_tool, line_tool, circle_tool];
-let curr_tool = pencil_tool;
-
-let selected_frame = -1;
-const delete_menu_item = document.getElementById("menu-delete");
-const duplicate_menu_item = document.getElementById("menu-duplicate");
-
-let dragged = null;
-let dragging = false;
-
-let pointerStartTime = -1;
-let pointerStartX = 0;
-let pointerStartY = 0;
-const DRAG_THRESHOLD_MS = 300;
-
-// init
-
-add_frame();
-setCurrFrame(0);
-updatePickerFront();
-
-selectTool(pencil_tool);
-
-// add frame
-
-add_button.addEventListener("pointerup", () => {
-  add_frame();
-  setCurrFrame(getFrameCount() - 1);
-  focusPreview();
-});
-
-function add_frame() {
-  let new_preview = preview_template.content.firstElementChild.cloneNode(true);
-  new_preview.draggable = true;
-
-  addSelectable(new_preview);
-
-  addContextMenu(new_preview);
-
-  addDragAndDrop(new_preview);
-
-  frame_list.appendChild(new_preview);
-
-  return new_preview;
-}
-
-function getFrameID(frame) {
-  return Array.from(frame_list.children).indexOf(frame);
-}
-
-function getPreviewAt(frame_index) {
-  return frame_list.children[frame_index];
-}
-
-function getCurrPreview() {
-  return getPreviewAt(curr_frame);
-}
-
-function getCanvasAt(frame_index) {
-  return getPreviewAt(frame_index).getElementsByClassName("preview-canvas")[0];
-}
-
-function getCurrCanvas() {
-  return getCanvasAt(curr_frame);
-}
-
-function getFrameCount() {
-  return frame_list.children.length;
-}
-
-// play / pause
-
+// Play button: toggles animation play/pause
 play_button.addEventListener("pointerup", () => {
   triggerPlayPause();
 });
 
+// Spacebar key up: triggers play/pause with keyboard
 document.addEventListener("keyup", (event) => {
   if (event.key == " " || event.code == "Space") {
     triggerPlayPause();
@@ -116,6 +16,7 @@ document.addEventListener("keyup", (event) => {
   }
 });
 
+// Toggles the play/pause state of the animation and updates the button icon
 function triggerPlayPause() {
   playing = !playing;
   if (playing) {
@@ -126,28 +27,31 @@ function triggerPlayPause() {
   }
 }
 
-// skip buttons
-
+// Next button: advances to the next frame
 next_button.addEventListener("pointerup", () => {
   skipFrame(1);
 });
 
+// Right arrow key down: advances to the next frame
 document.addEventListener("keydown", (event) => {
   if (event.code == "ArrowRight") {
     skipFrame(1);
   }
 });
 
+// Previous button: goes back to the previous frame
 previous_button.addEventListener("pointerup", () => {
   skipFrame(-1);
 });
 
+// Left arrow key down: goes back to the previous frame
 document.addEventListener("keydown", (event) => {
   if (event.code == "ArrowLeft") {
     skipFrame(-1);
   }
 });
 
+// Advances the current frame by the specified direction (1 for next, -1 for previous)
 function skipFrame(direction) {
   let next_frame;
   if (direction > 0) {
@@ -161,6 +65,7 @@ function skipFrame(direction) {
 
 // rendering
 
+// Plays the animation by incrementing the frame and scheduling the next frame
 function playAnimation() {
   if (!playing) return;
   let next_frame = (curr_frame + 1) % getFrameCount();
@@ -169,6 +74,7 @@ function playAnimation() {
   setTimeout(playAnimation, 100);
 }
 
+// Sets the current frame to the specified index and updates UI accordingly
 function setCurrFrame(frame_index) {
   if (curr_frame === frame_index) return;
   if (frame_index < 0 || frame_index >= getFrameCount()) return;
@@ -179,11 +85,14 @@ function setCurrFrame(frame_index) {
 
   curr_frame = frame_index;
   let new_preview = getCurrPreview();
+  curr_preview = new_preview;
+
   new_preview.classList.add("selected-preview");
 
   transferFromPreview();
 }
 
+// Scrolls the frame list to center the current frame in the viewport
 function focusPreview() {
   let curr_frame = getCurrPreview();
   curr_frame.scrollIntoView({
@@ -192,283 +101,3 @@ function focusPreview() {
     block: "nearest",
   });
 }
-
-// preview update (maybe into canvas.js)
-
-function transferToPreview() {
-  let dest_canvas = getCurrCanvas();
-  let dest_context = dest_canvas.getContext("2d");
-  dest_context.clearRect(0, 0, dest_canvas.width, dest_canvas.height);
-  dest_context.drawImage(
-    drawing_canvas,
-    0,
-    0,
-    dest_canvas.width,
-    dest_canvas.height,
-  );
-}
-
-function transferFromPreview() {
-  let source_canvas = getCurrCanvas();
-  let dest_context = drawing_canvas.getContext("2d");
-  dest_context.clearRect(0, 0, drawing_canvas.width, drawing_canvas.height);
-  dest_context.drawImage(
-    source_canvas,
-    0, 0,
-    drawing_canvas.width,
-    drawing_canvas.height,
-  );
-}
-
-// color picker
-
-color_picker.addEventListener("input", (event) => {
-  curr_color = color_picker.value;
-  updatePickerFront();
-});
-
-function updatePickerFront() {
-  color_tool.style.backgroundColor = curr_color;
-}
-
-// tool selection
-
-tools.forEach((tool) => {
-  tool.addEventListener("pointerup", () => {
-    if (curr_tool !== tool) {
-      selectTool(tool);
-    }
-  });
-});
-
-function selectTool(tool) {
-  curr_tool.classList.remove("selected-tool");
-  tool.classList.add("selected-tool");
-  curr_tool = tool;
-}
-
-eraser_tool.addEventListener("pointerup", () => {
-  is_erasing = !is_erasing;
-  if (is_erasing) {
-    eraser_tool.classList.add("selected-tool");
-  } else {
-    eraser_tool.classList.remove("selected-tool");
-  }
-});
-
-// context menu for frames
-
-function addContextMenu(preview_frame) {
- preview_frame
-    .getElementsByClassName("settings-icon")[0]
-    .addEventListener("pointerup", (e) => {
-      showContextMenu(preview_frame, e);
-    });
-}
-
-function showContextMenu(item, e) {
-  let mouseX = e.clientX || e.touches[0].clientX;
-  let mouseY = e.clientY || e.touches[0].clientY;
-  let menuHeight = context_menu.getBoundingClientRect().height;
-  let menuWidth = context_menu.getBoundingClientRect().width;
-  let width = window.innerWidth;
-  let height = window.innerHeight;
-
-  //If user pointerups/touches near right corner
-  if (width - mouseX <= menuWidth) {
-    context_menu.style.left = width - menuWidth + "px";
-    context_menu.style.top = mouseY + "px";
-    //right bottom
-    if (height - mouseY <= menuHeight) {
-      context_menu.style.top = mouseY - menuHeight + "px";
-      context_menu.style.borderRadius = "5px 5px 0 5px";
-    }
-  }
-
-  //left
-  else {
-    context_menu.style.left = mouseX + "px";
-    context_menu.style.top = mouseY + "px";
-    //left bottom
-    if (height - mouseY <= menuHeight) {
-      context_menu.style.top = mouseY - menuHeight + "px";
-      context_menu.style.borderRadius = "5px 5px 5px 0";
-    }
-  }
-
-  //display the menu
-  context_menu.style.visibility = "visible";
-  selected_frame = getFrameID(item);
-}
-
-delete_menu_item.addEventListener("pointerup", () => {
-  deleteFrame(selected_frame);
-  context_menu.style.visibility = "hidden";
-});
-
-duplicate_menu_item.addEventListener("pointerup", () => {
-  duplicateFrame(selected_frame);
-  context_menu.style.visibility = "hidden";
-});
-
-function deleteFrame(frame_index) {
-  if (frame_index < 0 || frame_index >= getFrameCount() || getFrameCount() <= 1)
-    return;
-
-  const removing_current = curr_frame === frame_index;
-  const removing_before = frame_index < curr_frame;
-
-  if (removing_current) {
-    const new_frame = (frame_index - 1 + getFrameCount()) % getFrameCount();
-    setCurrFrame(new_frame);
-    focusPreview();
-  } else if (removing_before) {
-    curr_frame -= 1;
-    setCurrFrame(curr_frame);
-  }
-
-  getPreviewAt(frame_index).remove();
-}
-
-function duplicateFrame(frame_index) {
-  if (frame_index < 0 || frame_index >= getFrameCount()) return;
-  let source_preview = getPreviewAt(frame_index);
-  let new_preview = add_frame();
-  new_canvas = new_preview.getElementsByClassName("preview-canvas")[0];
-  new_canvas.getContext("2d")
-    .drawImage(getCurrCanvas(), 0, 0, new_canvas.width, new_canvas.height);
-  frame_list.insertBefore(new_preview, source_preview.nextSibling);
-}
-
-//click outside the menu to close it (for click devices)
-document.addEventListener("pointerdown", function (e) {
-  if (!context_menu.contains(e.target)) {
-    context_menu.style.visibility = "hidden";
-  }
-});
-
-// frame preview navigation (select, drag and scroll)
-
-const MOVE_THRESHOLD = 8;
-let gesture = "undecided";
-let action_happened = false;
-
-function addSelectable(preview_frame) {
-  preview_frame.addEventListener("pointerup", () => {
-    console.log("your mum");
-    if(!dragging) {
-      setCurrFrame(getFrameID(preview_frame));
-      focusPreview();
-      dragging = false;
-    }
-  });
-}
-
-document.addEventListener("pointermove", (e) => {
-  if (!dragged) return;
-
-  const dx = e.clientX - pointerStartX;
-  const dy = e.clientY - pointerStartY;
-
-  if (gesture === "undecided") {
-    if (Math.abs(dx) > MOVE_THRESHOLD) {
-      gesture = "scroll";
-      dragging = true;
-    } else if (Math.abs(dy) > MOVE_THRESHOLD && Date.now() - pointerStartTime > DRAG_THRESHOLD_MS) {
-      startDrag();
-    } else {
-      return;
-    }
-  }
-
-  if (gesture === "scroll") {
-    frame_list_container.scrollLeft -= dx;
-    pointerStartX = e.clientX;
-  }
-
-  if (gesture === "drag") {
-    e.preventDefault();
-    updateDrag(e);
-  }
-});
-
-function updateDrag(e) {
-  if (!dragged) return;
-
-  const target = document
-    .elementFromPoint(e.clientX, e.clientY)
-    ?.closest(".preview-frame");
-
-  if (!target || target === dragged) return;
-
-  const rect = target.getBoundingClientRect();
-  const midpoint = rect.left + rect.width / 2;
-
-  if (e.clientX < midpoint) {
-    target.parentNode.insertBefore(dragged, target);
-  } else {
-    target.parentNode.insertBefore(dragged, target.nextElementSibling);
-  }
-}
-
-function startDrag() {
-  if (!dragged) return;
-
-  gesture = "drag";
-  dragging = true;
-
-  dragged.classList.add("dragging");
-  //frame_list.classList.add("contentdragging");
-  //document.body.classList.add("no-select");
-}
-
-document.addEventListener("pointerup", (e) => {
-  stopDragging();
-});
-
-document.addEventListener("pointercancel", (e) => {
-  stopDragging();
-});
-
-function addDragAndDrop(item) {
-    item.addEventListener("pointerdown", (e) => {
-    pointerStartX = e.clientX;
-    pointerStartY = e.clientY;
-    pointerStartTime = Date.now();
-    dragged = item;
-    dragging = false;
-    gesture = "undecided";
-
-    setTimeout(() => {
-      if(gesture==="undecided") {
-        startDrag();
-      }
-    }, 400);
-  });
-
-  item.addEventListener("dragstart", (e) => {
-    e.preventDefault();
-  });
-
-}
-
-document.addEventListener("contextmenu", (e) => {
-  e.preventDefault();
-});
-
-function stopDragging() {
-  // If we were dragging, finalize it
-  if (gesture === "drag" && dragged) {
-    dragged.classList.remove("dragging");
-  }
-  //frame_list.classList.remove("contentdragging");
-
-  // Reset all gesture state
-  gesture = null;
-  dragged = null;
-
-  pointerStartX = 0;
-  pointerStartY = 0;
-  pointerStartTime = 0;
-}
-
