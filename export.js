@@ -25,7 +25,7 @@ function renderToGif() {
     bigCtx.imageSmoothingEnabled = false;
 
     const encoder = new GIFEncoder(render_dimension, render_dimension);
-    encoder.setDelay(100);
+    encoder.setDelay(frame_duration);
     encoder.start(); 
     for (let i = 0; i < getFrameCount(); i++) {
         let prev_canvas = getCanvasAt(i);

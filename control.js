@@ -1,7 +1,10 @@
-let playing = false;
+const frame_duration = 100;
+
 const play_button = document.getElementById("play-button");
 const next_button = document.getElementById("next-button");
 const previous_button = document.getElementById("previous-button");
+
+let playing = false;
 
 // Play button: toggles animation play/pause
 play_button.addEventListener("pointerup", () => {
@@ -71,7 +74,7 @@ function playAnimation() {
   let next_frame = (curr_frame + 1) % getFrameCount();
   setCurrFrame(next_frame);
   focusPreview();
-  setTimeout(playAnimation, 100);
+  setTimeout(playAnimation, frame_duration);
 }
 
 // Sets the current frame to the specified index and updates UI accordingly

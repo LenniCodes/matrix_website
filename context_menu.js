@@ -12,7 +12,7 @@ function addContextMenu(preview_frame) {
     });
 }
 
-// Displays the context menu at the position of the pointer event, adjusting position based on viewport boundaries
+// Displays the context menu at the position of the pointer or adjusts it if needed
 function showContextMenu(item, e) {
   let mouseX = e.clientX || e.touches[0].clientX;
   let mouseY = e.clientY || e.touches[0].clientY;

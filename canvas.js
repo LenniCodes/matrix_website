@@ -16,7 +16,7 @@ let last_frame_id = curr_frame;
 
 context.imageSmoothingEnabled = false;
 
-// Saves the current canvas state to the undo stack for later restoration
+// Saves the current canvas state to the undo stack for later usage
 function saveCanvasState() {
   checkSession();
   if (undo_stack.length >= MAX_UNDO) {
