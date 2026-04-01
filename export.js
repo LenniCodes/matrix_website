@@ -3,59 +3,71 @@ let overlay = document.getElementById("overlay");
 
 const render_dimension = 1000;
 
+// 192.168.1.133
+
 // Export button: renders animation as GIF and downloads it
 export_button.addEventListener("pointerup", async () => {
     overlay.classList.add("showing");
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            renderToGif();
+            let res = "{dur:100,fade:50}" + renderToString();
+            fetch("http://192.168.1.133:81/animation", {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: res
+            })
+                .then(response => response.text())
+                .then(data => console.log(data))
+                .catch(error => console.error(error));
             overlay.classList.remove("showing");
         });
     });
 });
 
 // Renders all frames as a GIF animation and initiates download
-function renderToGif() {
-    const big = document.createElement("canvas");
-    big.width = render_dimension;
-    big.height = render_dimension;
-
-    const bigCtx = big.getContext("2d");
-
-    bigCtx.imageSmoothingEnabled = false;
-
-    const encoder = new GIFEncoder(render_dimension, render_dimension);
-    encoder.setDelay(frame_duration);
-    encoder.start(); 
+function renderToString() {
+    let result = "";
     for (let i = 0; i < getFrameCount(); i++) {
-        let prev_canvas = getCanvasAt(i);
-
-        bigCtx.clearRect(0, 0, render_dimension, render_dimension);
-        bigCtx.drawImage(prev_canvas, 0, 0, render_dimension, render_dimension);
-        encoder.addFrame(bigCtx);
+        let prev_canvas = getCanvasAt(i).getContext('2d');
+        result += canvasToString(prev_canvas);
     }
-    encoder.finish();
-
-    const buffer = encoder.out.getData();
-    writeFile('animation.gif', buffer, error => {
-        error ? console.log(error) : null;
-    });
+    console.log(result);
+    return result;
 }
 
-// Writes a blob to a file and triggers download in the browser
-function writeFile(filename, buffer, callback) {
-    try {
-        const blob = new Blob([buffer], { type: 'image/gif' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        callback(null);
-    } catch (error) {
-        callback(error);
+function canvasToString(context) {
+    const imageData = context.getImageData(0, 0, 10, 10);
+    const data = imageData.data;
+    let str = "[";
+    for (let i = 0; i < data.length; i += 4) {
+        let x = (i / 4) % 10;
+        let y = Math.floor((i / 4) / 10);
+        //let led = i / 4;
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+        //str+=`CRGB(${r},${g},${b}),`;
+        if (r + g + b === 0) {
+            continue;
+        }
+
+        let alpha = data[i + 3] / 255.0;
+        r = alpha * r;
+        g = alpha * g;
+        b = alpha * b;
+
+        let hex = ("0" + parseInt(r, 10).toString(16)).slice(-2) +
+            ("0" + parseInt(g, 10).toString(16)).slice(-2) +
+            ("0" + parseInt(b, 10).toString(16)).slice(-2);
+        str += `${x}.${y}:${hex},`;
+        //str+=`${led}:${hex},`;
     }
+    if (str.endsWith(",")) {
+        str = str.slice(0, -1);
+    }
+    str += "]";
+    return str;
 }
