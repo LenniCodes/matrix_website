@@ -11,17 +11,11 @@ export_button.addEventListener("pointerup", async () => {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             let res = "{dur:100,fade:50}" + renderToString();
-            fetch("http://192.168.1.133:81/animation", {
-                method: "POST",
-                mode: "cors",
-                headers: {
-                    "Content-Type": "text/plain"
-                },
-                body: res
-            })
-                .then(response => response.text())
-                .then(data => console.log(data))
-                .catch(error => console.error(error));
+            let socket = new WebSocket("ws://192.168.1.133:81/ws");
+            socket.onopen = () => {
+                socket.send(res);
+                socket.close();
+            };
             overlay.classList.remove("showing");
         });
     });
@@ -34,7 +28,7 @@ function renderToString() {
         let prev_canvas = getCanvasAt(i).getContext('2d');
         result += canvasToString(prev_canvas);
     }
-    console.log(result);
+    console.log("sending via socket: " + result);
     return result;
 }
 
